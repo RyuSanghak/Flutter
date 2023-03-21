@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 
+
+String receiveData = "";
+
 class BluetoothConnectPage extends StatefulWidget {
   @override
   _BluetoothConnectPageState createState() => _BluetoothConnectPageState();
@@ -10,6 +13,8 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
   FlutterBluePlus flutterBlue = FlutterBluePlus.instance;
   BluetoothDevice? _connectedDevice;
   BluetoothCharacteristic? _characteristic;
+
+
 
   @override
   void initState() {
@@ -39,6 +44,11 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
           }
         }
       }
+      await characteristic.setNotifyValue(true);
+      characteristic.value.listen((data) {
+        // Handle real-time data here
+        print(data);
+      });
       setState(() {
         _connectedDevice = device;
       });
@@ -90,7 +100,7 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
             child: StreamBuilder<List<BluetoothDevice>>(
               stream: flutterBlue.scanResults
                   .map((results) => results.map((r) => r.device).toList()),
-              initialData: [],
+              initialData: const [],
               builder: (BuildContext context,
                   AsyncSnapshot<List<BluetoothDevice>> snapshot) {
                 return RefreshIndicator(
@@ -148,7 +158,13 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
                       ),
                     )
                   : null,
-              onTap: () => _connectToDevice(device),
+              onTap: () {
+                _connectToDevice(device);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => blueDataPage()),
+                  );
+              },
               leading: Icon(
                 Icons.bluetooth,
                 color: Colors.grey,
@@ -160,5 +176,25 @@ class _BluetoothConnectPageState extends State<BluetoothConnectPage> {
       ]);
     } else
       return Container();
+  }
+
+  Widget blueDataPage (){
+    return Scaffold(
+        appBar: AppBar(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(25))),
+            title: Text('LABCO', style: TextStyle(color: Colors.blueAccent))),
+
+        body: Container(
+            child:
+            ElevatedButton(
+              child: Text('Read Data'),
+              onPressed: _characteristic != null ? _readData : null,
+            ),
+
+
+        )
+    );
   }
 }
